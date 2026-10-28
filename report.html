@@ -1,0 +1,482 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Report an Item | CampusFind</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .form-page {
+            background: #f5f7fc;
+            padding: 45px 20px;
+            min-height: 85vh;
+        }
+
+        .form-container {
+            max-width: 680px;
+            margin: auto;
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px #17243b0c;
+        }
+
+        .form-container h1 {
+            font-size: 30px;
+            margin-bottom: 8px;
+        }
+
+        .form-intro {
+            color: #748096;
+            margin-bottom: 25px;
+        }
+
+        .type-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 12px 0 24px;
+        }
+
+        .type-option {
+            border: 1px solid #dce2ec;
+            border-radius: 10px;
+            padding: 16px;
+            cursor: pointer;
+        }
+
+        .type-option:has(input:checked) {
+            border-color: #4776e6;
+            background: #f0f5ff;
+        }
+
+        .type-option input {
+            margin-right: 7px;
+            accent-color: #4776e6;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 7px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dce2ec;
+            border-radius: 8px;
+            font: inherit;
+            font-size: 14px;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: 2px solid #dce8ff;
+            border-color: #4776e6;
+        }
+
+        .form-submit {
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .form-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #4776e6;
+            margin-bottom: 18px;
+        }
+
+        .form-message {
+            display: none;
+            margin-top: 18px;
+            padding: 14px;
+            border-radius: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .form-message.success {
+            display: block;
+            background: #e9f8ef;
+            color: #176b3a;
+        }
+
+        .form-message.error {
+            display: block;
+            background: #fff0f0;
+            color: #a12626;
+        }
+
+        @media (max-width: 500px) {
+            .form-container {
+                padding: 22px;
+            }
+
+            .type-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="navbar">
+        <a href="index.html" class="logo">
+            Campus<span>Find</span>
+        </a>
+
+        <a href="index.html" class="nav-button">← Home</a>
+    </header>
+
+    <main class="form-page">
+        <div class="form-container">
+
+            <a href="index.html" class="back-link">
+                ← Back to home
+            </a>
+
+            <h1>Report an Item</h1>
+
+            <p class="form-intro">
+                Help reunite lost belongings with their owners.
+            </p>
+
+            <form id="itemForm">
+
+                <label>
+                    <strong>What would you like to report?</strong>
+                </label>
+
+                <div class="type-options">
+
+                    <label class="type-option">
+                        <input
+                            type="radio"
+                            name="reportType"
+                            value="LOST"
+                            required
+                        >
+                        <strong>🔍 I lost an item</strong>
+                    </label>
+
+                    <label class="type-option">
+                        <input
+                            type="radio"
+                            name="reportType"
+                            value="FOUND"
+                            required
+                        >
+                        <strong>🎒 I found an item</strong>
+                    </label>
+
+                </div>
+
+                <div class="form-group">
+                    <label for="title">Item name *</label>
+                    <input
+                        id="title"
+                        name="title"
+                        type="text"
+                        maxlength="100"
+                        placeholder="e.g. Blue water bottle"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" required>
+                        <option value="">Choose a category</option>
+                        <option value="ID Cards">ID Cards</option>
+                        <option value="Books and Notebooks">
+                            Books and Notebooks
+                        </option>
+                        <option value="Keys">Keys</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Bags">Bags</option>
+                        <option value="Clothing">Clothing</option>
+                        <option value="Water Bottles">Water Bottles</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description *</label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        maxlength="1000"
+                        placeholder="Describe the item..."
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Campus location *</label>
+                    <input
+                        id="location"
+                        name="location"
+                        type="text"
+                        maxlength="150"
+                        placeholder="e.g. Library, Block A"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="incidentDate">Date lost or found *</label>
+                    <input
+                        id="incidentDate"
+                        name="incidentDate"
+                        type="date"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="photo">Item photo (optional)</label>
+                    <input
+                        id="photo"
+                        name="photo"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                    >
+                    <small>Choose a JPG, PNG, or WebP image.</small>
+                </div>
+
+                <button
+                    type="submit"
+                    id="submitBtn"
+                    class="primary-button form-submit"
+                >
+                    Submit Report
+                </button>
+
+                <div
+                    id="formMessage"
+                    class="form-message"
+                    role="status"
+                    aria-live="polite"
+                ></div>
+
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:5000";
+
+        const form = document.getElementById("itemForm");
+        const message = document.getElementById("formMessage");
+        const submitBtn = document.getElementById("submitBtn");
+
+        // Preselect Lost or Found using the homepage link.
+        const params = new URLSearchParams(window.location.search);
+        const initialType = params.get("type");
+
+        if (initialType === "lost" || initialType === "found") {
+            const option = document.querySelector(
+                'input[name="reportType"][value="' +
+                initialType.toUpperCase() + '"]'
+            );
+
+            if (option) {
+                option.checked = true;
+            }
+        }
+
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = "form-message " + type;
+        }
+
+        // Check whether the user is logged in.
+        async function checkReportLogin() {
+            try {
+                const response = await fetch(
+                    API_BASE + "/api/me",
+                    {
+                        method: "GET",
+                        credentials: "include"
+                    }
+                );
+
+                if (response.status === 401) {
+                    alert("Please log in before submitting a report.");
+                    window.location.href = "login.html";
+                    return false;
+                }
+
+                if (!response.ok) {
+                    throw new Error("Could not verify your login.");
+                }
+
+                return true;
+
+            } catch (error) {
+                console.error("Login check failed:", error);
+
+                showMessage(
+                    "Could not connect to the server. Make sure Flask is running.",
+                    "error"
+                );
+
+                return false;
+            }
+        }
+
+        // Enable the form after checking login.
+        async function initialiseForm() {
+            form.querySelectorAll("input, select, textarea, button")
+                .forEach(element => element.disabled = true);
+
+            const isLoggedIn = await checkReportLogin();
+
+            if (isLoggedIn) {
+                form.querySelectorAll("input, select, textarea, button")
+                    .forEach(element => element.disabled = false);
+            }
+        }
+
+        initialiseForm();
+
+        // Submit the report to Flask.
+        form.addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            if (!form.reportType.value) {
+                showMessage("Please select Lost or Found.", "error");
+                return;
+            }
+
+            const formData = new FormData();
+
+            formData.append("report_type", form.reportType.value);
+            formData.append(
+                "title",
+                document.getElementById("title").value.trim()
+            );
+            formData.append(
+                "category",
+                document.getElementById("category").value
+            );
+            formData.append(
+                "description",
+                document.getElementById("description").value.trim()
+            );
+            formData.append(
+                "location",
+                document.getElementById("location").value.trim()
+            );
+            formData.append(
+                "incident_date",
+                document.getElementById("incidentDate").value
+            );
+
+            // Attach photo only when a file is selected.
+            const photoInput = document.getElementById("photo");
+
+            if (photoInput && photoInput.files.length > 0) {
+                const photo = photoInput.files[0];
+                const allowedTypes = [
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp"
+                ];
+
+                if (!allowedTypes.includes(photo.type)) {
+                    showMessage(
+                        "Please select a JPG, PNG, or WebP image.",
+                        "error"
+                    );
+                    return;
+                }
+
+                if (photo.size > 5 * 1024 * 1024) {
+                    showMessage(
+                        "Photo must be smaller than 5 MB.",
+                        "error"
+                    );
+                    return;
+                }
+
+                formData.append("photo", photo);
+            }
+
+            submitBtn.disabled = true;
+            showMessage("Saving report...", "success");
+
+            try {
+                const response = await fetch(
+                    API_BASE + "/api/reports",
+                    {
+                        method: "POST",
+                        credentials: "include",
+                        body: formData
+                    }
+                );
+
+                const result = await response.json();
+
+                if (response.status === 401) {
+                    alert("Your login session has expired. Please log in again.");
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(
+                        result.error || "Could not save report."
+                    );
+                }
+
+                showMessage(
+                    "Report saved successfully! ID: " + result.report_id,
+                    "success"
+                );
+
+                form.reset();
+
+            } catch (error) {
+                console.error("Report submission failed:", error);
+
+                showMessage(
+                    error.message ||
+                    "Report could not be saved. Please try again.",
+                    "error"
+                );
+
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+
+</body>
+</html>

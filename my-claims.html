@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Claims | CampusFind</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        header {
+            background: #173b70;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .claim-card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            border: 1px solid #dce3ed;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: #fff0c2;
+            color: #765500;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .approved {
+            background: #d8f5df;
+            color: #176b32;
+        }
+
+        .rejected {
+            background: #ffe0e0;
+            color: #a32121;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #173b70;
+            color: white;
+            cursor: pointer;
+        }
+
+        .message {
+            background: white;
+            padding: 18px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>CampusFind</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="report.html">Report Item</a>
+            <a href="my-claims.html">My Claims</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>My Claims</h2>
+        <p>Track the status of the claims you have submitted.</p>
+
+        <button onclick="loadClaims()">Refresh Claims</button>
+
+        <div id="claimsList" style="margin-top: 20px;">
+            Loading claims...
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:5000/api";
+
+        async function loadClaims() {
+            const list = document.getElementById("claimsList");
+            list.textContent = "Loading claims...";
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/claims/my`,
+                    { credentials: "include" }
+                );
+
+                if (response.status === 401) {
+                    list.textContent =
+                        "Please log in first to view your claims.";
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error("Could not load claims.");
+                }
+
+                const claims = await response.json();
+                list.replaceChildren();
+
+                if (!Array.isArray(claims) || claims.length === 0) {
+                    list.textContent = "You have not submitted any claims yet.";
+                    return;
+                }
+
+                claims.forEach(claim => {
+                    const card = document.createElement("section");
+                    card.className = "claim-card";
+
+                    const title = document.createElement("h3");
+                    title.textContent = claim.item_title || claim.title || "Reported item";
+
+                    const message = document.createElement("p");
+                    message.textContent =
+                        "Your message: " + (claim.claim_message || "");
+
+                    const status = document.createElement("span");
+                    const currentStatus =
+                        String(claim.verification_status || "pending")
+                            .toLowerCase();
+
+                    status.className = "status";
+                    if (currentStatus === "approved") {
+                        status.classList.add("approved");
+                    } else if (currentStatus === "rejected") {
+                        status.classList.add("rejected");
+                    }
+
+                    status.textContent =
+                        "Status: " + currentStatus.charAt(0).toUpperCase()
+                        + currentStatus.slice(1);
+
+                    card.append(title, message, status);
+                    list.appendChild(card);
+                });
+
+            } catch (error) {
+                list.textContent =
+                    "Unable to load claims. Check that the Flask server is running and try again.";
+            }
+        }
+
+        loadClaims();
+    </script>
+</body>
+</html>

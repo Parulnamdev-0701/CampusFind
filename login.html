@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | CampusFind</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-container {
+            max-width: 430px;
+            margin: 60px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .auth-container label {
+            display: block;
+            margin-top: 16px;
+            margin-bottom: 6px;
+        }
+        .auth-container input {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccd5e0;
+            border-radius: 8px;
+            font: inherit;
+        }
+        .auth-container button {
+            width: 100%;
+            margin-top: 22px;
+            padding: 12px;
+            background: #173f7a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit;
+        }
+        #message { margin-top: 14px; }
+    </style>
+</head>
+<body>
+    <main class="auth-container">
+        <h1>Welcome Back!</h1>
+        <p>Log in to your CampusFind account.</p>
+
+        <form id="loginForm">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email"
+                   autocomplete="email" required>
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password"
+                   autocomplete="current-password" required>
+
+            <button type="submit">Log In</button>
+        </form>
+        
+<button id="logoutBtn" type="button" style="display: none;">
+    Logout
+</button>
+
+<p id="logoutMessage"></p>
+
+<script>
+const logoutBtn = document.getElementById("logoutBtn");
+const logoutMessage = document.getElementById("logoutMessage");
+
+// Check whether the user is logged in
+fetch("http://127.0.0.1:5000/api/me", {
+    credentials: "include"
+})
+.then(response => {
+    if (response.ok) {
+        logoutBtn.style.display = "inline-block";
+    }
+})
+.catch(error => console.log("Session check failed:", error));
+
+// Logout the user
+logoutBtn.addEventListener("click", async function () {
+    try {
+        const response = await fetch(
+            "http://127.0.0.1:5000/api/logout",
+            {
+                method: "POST",
+                credentials: "include"
+            }
+        );
+
+        if (response.ok) {
+            logoutMessage.textContent = "You have logged out successfully.";
+            logoutBtn.style.display = "none";
+        } else {
+            logoutMessage.textContent = "Logout failed. Please try again.";
+        }
+    } catch (error) {
+        logoutMessage.textContent = "Could not connect to the server.";
+    }
+});
+</script>
+
+
+        <p id="message" role="status"></p>
+        <p>Don't have an account? <a href="signup.html">Sign up</a></p>
+        <p><a href="index.html">Back to Home</a></p>
+    </main>
+
+    <script>
+        const loginForm = document.getElementById("loginForm");
+        const message = document.getElementById("message");
+
+        loginForm.addEventListener("submit", async function(event) {
+            event.preventDefault();
+            message.textContent = "Logging in...";
+
+            const details = {
+                email: document.getElementById("email").value.trim(),
+                password: document.getElementById("password").value
+            };
+
+            try {
+                const response = await fetch(
+                    "http://127.0.0.1:5000/api/login",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        credentials: "include",
+                        body: JSON.stringify(details)
+                    }
+                );
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Login failed.");
+                }
+
+                message.textContent =
+                    "Login successful! Welcome, " + result.user.name + ".";
+
+                loginForm.reset();
+            } catch (error) {
+                message.textContent = error.message ||
+                    "Could not connect. Check whether Flask is running.";
+            }
+        });
+    </script>
+</body>
+</html>

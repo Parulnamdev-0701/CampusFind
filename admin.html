@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusFind Admin Dashboard</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        header {
+            background: #173b70;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        header a:hover {
+            text-decoration: underline;
+        }
+
+        main {
+            max-width: 950px;
+            margin: 30px auto;
+            padding: 16px;
+        }
+
+        .claim-card {
+            background: white;
+            border: 1px solid #dce3ed;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 16px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .claim-card h3 {
+            color: #173b70;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px 5px 5px 0;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .refresh {
+            background: #173b70;
+        }
+
+        .approve {
+            background: #218838;
+        }
+
+        .reject {
+            background: #c62828;
+        }
+
+        .status {
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        #message {
+            overflow-wrap: anywhere;
+        }
+
+        .empty {
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>CampusFind Admin</h1>
+
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="my-claim.html">My Claims</a>
+            <a href="login.html">Login</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Manage Claims</h2>
+        <p>Review claims submitted for found items.</p>
+
+        <button
+            type="button"
+            class="refresh"
+            id="refreshButton"
+            onclick="loadClaims()">
+            Refresh Claims
+        </button>
+
+        <p id="message" role="status" aria-live="polite">
+            Checking admin login...
+        </p>
+
+        <div id="claimsList"></div>
+    </main>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:5000/api";
+
+        async function readResponse(response) {
+            const text = await response.text();
+
+            try {
+                return text ? JSON.parse(text) : {};
+            } catch {
+                return {
+                    error: "The server returned an unexpected response."
+                };
+            }
+        }
+
+        async function loadClaims() {
+            const list = document.getElementById("claimsList");
+            const message = document.getElementById("message");
+            const refreshButton = document.getElementById("refreshButton");
+
+            list.replaceChildren();
+            message.textContent = "Loading claims...";
+            refreshButton.disabled = true;
+
+            try {
+                // Step 1: Check login
+                const meResponse = await fetch(`${API_BASE}/me`, {
+                    credentials: "include"
+                });
+
+                const me = await readResponse(meResponse);
+
+                if (!meResponse.ok) {
+                    message.textContent =
+                        "Please log in with your admin account first.";
+                    return;
+                }
+
+                // Step 2: Check admin role
+                if (me.role !== "admin") {
+                    message.textContent =
+                        "Access denied. Please log in with an admin account.";
+                    return;
+                }
+
+                // Step 3: Load all claims
+                const response = await fetch(`${API_BASE}/admin/claims`, {
+                    credentials: "include"
+                });
+
+                const data = await readResponse(response);
+
+                if (!response.ok) {
+                    message.textContent =
+                        data.error || "Unable to load claims.";
+                    return;
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    message.textContent = "No claims have been submitted yet.";
+                    list.innerHTML =
+                        '<p class="empty">There are currently no claims to review.</p>';
+                    return;
+                }
+
+                message.textContent = `Total claims: ${data.length}`;
+
+                data.forEach(claim => {
+                    const card = document.createElement("section");
+                    card.className = "claim-card";
+
+                    const title = document.createElement("h3");
+                    title.textContent =
+                        claim.item_title ||
+                        claim.report_title ||
+                        claim.title ||
+                        "Reported item";
+
+                    const claimant = document.createElement("p");
+                    claimant.textContent =
+                        `Claimant: ${claim.claimant_name || "Unknown"} ` +
+                        `(${claim.claimant_email || "Email unavailable"})`;
+
+                    const location = document.createElement("p");
+                    location.textContent =
+                        `Item location: ${claim.location || "Not provided"}`;
+
+                    const details = document.createElement("p");
+                    details.textContent =
+                        `Claim message: ${claim.claim_message || "No message provided"}`;
+
+                    const status = document.createElement("p");
+                    status.className = "status";
+                    status.textContent =
+                        `Status: ${claim.verification_status || claim.status || "unknown"}`;
+
+                    card.append(title, claimant, location, details, status);
+
+                    const currentStatus =
+                        claim.verification_status || claim.status;
+
+                    if (currentStatus === "pending") {
+                        const approve = document.createElement("button");
+                        approve.type = "button";
+                        approve.className = "approve";
+                        approve.textContent = "Approve";
+
+                        const reject = document.createElement("button");
+                        reject.type = "button";
+                        reject.className = "reject";
+                        reject.textContent = "Reject";
+
+                        const claimId = claim.claim_id ?? claim.id;
+
+                        if (claimId == null) {
+                            approve.disabled = true;
+                            reject.disabled = true;
+                        } else {
+                            approve.addEventListener("click", () =>
+                                reviewClaim(
+                                    claimId,
+                                    "approved",
+                                    approve,
+                                    reject
+                                )
+                            );
+
+                            reject.addEventListener("click", () =>
+                                reviewClaim(
+                                    claimId,
+                                    "rejected",
+                                    approve,
+                                    reject
+                                )
+                            );
+                        }
+
+                        card.append(approve, reject);
+                    }
+
+                    list.appendChild(card);
+                });
+
+            } catch (error) {
+                message.textContent =
+                    "Could not connect to Flask. Make sure python app.py is running.";
+            } finally {
+                refreshButton.disabled = false;
+            }
+        }
+
+        async function reviewClaim(
+            claimId,
+            status,
+            approveButton,
+            rejectButton
+        ) {
+            const message = document.getElementById("message");
+
+            const confirmed = confirm(
+                `Are you sure you want to ${status} this claim?`
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            approveButton.disabled = true;
+            rejectButton.disabled = true;
+            message.textContent = `Updating claim #${claimId}...`;
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/claims/${claimId}/status`,
+                    {
+                        method: "PATCH",
+                        credentials: "include",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ status: status })
+                    }
+                );
+
+                const data = await readResponse(response);
+
+                if (!response.ok) {
+                    message.textContent =
+                        data.error || "Unable to update claim.";
+
+                    approveButton.disabled = false;
+                    rejectButton.disabled = false;
+                    return;
+                }
+
+                message.textContent =
+                    `Claim #${claimId} ${status} successfully.`;
+
+                await loadClaims();
+
+            } catch (error) {
+                message.textContent =
+                    "Could not connect to the backend. Please try again.";
+
+                approveButton.disabled = false;
+                rejectButton.disabled = false;
+            }
+        }
+
+        // Load claims when the page opens.
+        loadClaims();
+    </script>
+</body>
+</html>

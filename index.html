@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusFind | Smart Lost & Found</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .report-image {
+            display: block;
+            width: 100%;
+            max-height: 240px;
+            object-fit: contain;
+            border-radius: 12px;
+            margin: 12px 0;
+            background: #f5f5f5;
+        }
+
+        .report-badge {
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .report-card h3 {
+            margin-top: 8px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .filter-button.active {
+            font-weight: bold;
+        }
+
+        .smart-matches {
+            margin-top: 16px;
+        }
+
+        .match-card {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .match-note {
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .image-error {
+            color: #a33;
+            font-size: 0.9rem;
+        }
+
+        /* Dashboard Statistics */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+            padding: 28px 5%;
+        }
+
+        .stats .stat {
+            text-align: center;
+            padding: 22px 12px;
+            background: #fff;
+            border: 1px solid #e1e7ef;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .stats .stat h2 {
+            margin: 0 0 8px;
+            font-size: 2rem;
+            color: #1d4278;
+        }
+
+        .stats .stat p {
+            margin: 0;
+            color: #5e6878;
+        }
+
+        @media (max-width: 650px) {
+            .stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+                padding: 20px 4%;
+            }
+
+            .stats .stat {
+                padding: 18px 8px;
+            }
+
+            .stats .stat h2 {
+                font-size: 1.7rem;
+            }
+        }
+
+        /* Claim Item */
+        .claim-section {
+            margin-top: 18px;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+        }
+
+        .claim-section h4 {
+            margin-top: 0;
+        }
+
+        .claim-message {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font: inherit;
+            resize: vertical;
+        }
+
+        .claim-button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .claim-button:disabled {
+            cursor: wait;
+            opacity: 0.6;
+        }
+
+        .stats-error {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #a33;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <header class="navbar">
+        <a href="#home" class="logo">Campus<span>Find</span></a>
+
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#browse">Browse Items</a>
+            <a href="#how">How It Works</a>
+        </nav>
+
+        <div class="nav-auth">
+            <a href="login.html" id="loginLink">Login</a>
+            <a href="signup.html" id="signupLink">Sign Up</a>
+
+            <span id="userStatus" style="display:none;"></span>
+
+            <button id="logoutBtn" type="button" style="display:none;">
+                Logout
+            </button>
+
+            <a href="#report" class="nav-button">+ Report Item</a>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <div class="hero-content">
+                <p class="tagline">🎓 YOUR CAMPUS, CONNECTED</p>
+
+                <h1>
+                    Lost something?<br>
+                    <span>Let's find it.</span>
+                </h1>
+
+                <p class="hero-text">
+                    A smarter way to reunite students with their lost
+                    belongings. Report, search, and find items on campus
+                    in one place.
+                </p>
+
+                <div class="hero-buttons">
+                    <a href="#browse" class="primary-button">
+                        Find an Item →
+                    </a>
+
+                    <a href="#report" class="secondary-button">
+                        Report Lost or Found
+                    </a>
+                </div>
+
+                <p class="trust-text">
+                    Made for students. Built for campus.
+                </p>
+            </div>
+
+            <div class="hero-visual">
+                <div class="illustration">🎒</div>
+
+                <div class="floating-card">
+                    <span class="success-icon">✓</span>
+                    <div>
+                        <strong>Found something?</strong>
+                        <p>Help it find its owner.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Dashboard Statistics -->
+        <section class="stats" id="stats">
+            <div class="stat">
+                <h2 id="lostCount">0</h2>
+                <p>Lost Items</p>
+            </div>
+
+            <div class="stat">
+                <h2 id="foundCount">0</h2>
+                <p>Found Items</p>
+            </div>
+
+            <div class="stat">
+                <h2 id="pendingCount">0</h2>
+                <p>Pending Claims</p>
+            </div>
+
+            <div class="stat">
+                <h2 id="approvedCount">0</h2>
+                <p>Approved Claims</p>
+            </div>
+        </section>
+
+        <!-- Browse Items -->
+        <section class="section" id="browse">
+            <div class="section-heading">
+                <div>
+                    <p class="tagline">START YOUR SEARCH</p>
+                    <h2>What are you looking for?</h2>
+                    <p>Search for items reported around your campus.</p>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <span>🔍</span>
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search for keys, books, ID cards..."
+                >
+
+                <button type="button" id="searchButton">
+                    Search
+                </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="report-filters">
+                <button
+                    type="button"
+                    class="filter-button active"
+                    data-filter="ALL">
+                    All Items
+                </button>
+
+                <button
+                    type="button"
+                    class="filter-button"
+                    data-filter="LOST">
+                    Lost Items
+                </button>
+
+                <button
+                    type="button"
+                    class="filter-button"
+                    data-filter="FOUND">
+                    Found Items
+                </button>
+            </div>
+
+            <div id="reportsContainer" class="reports-grid">
+                <p>Loading reports...</p>
+            </div>
+        </section>
+
+        <!-- Report Section -->
+        <section class="report-section" id="report">
+            <div>
+                <p class="tagline">BE PART OF THE SOLUTION</p>
+                <h2>Lost it or found it?</h2>
+
+                <p>
+                    One small report can help someone recover
+                    something important.
+                </p>
+            </div>
+
+            <div class="report-buttons">
+                <a href="report.html?type=lost" class="primary-button">
+                    Report Lost Item
+                </a>
+
+                <a href="report.html?type=found" class="secondary-button">
+                    Report Found Item
+                </a>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="section how-section" id="how">
+            <p class="tagline">SIMPLE AND EASY</p>
+            <h2>How CampusFind works</h2>
+
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">01</div>
+                    <h3>Report an item</h3>
+                    <p>
+                        Share its description, category, date,
+                        and location.
+                    </p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">02</div>
+                    <h3>Search and match</h3>
+                    <p>
+                        Browse reports and discover possible matches.
+                    </p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">03</div>
+                    <h3>Verify and reunite</h3>
+                    <p>
+                        Submit a claim and verify ownership securely.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <a href="#home" class="logo">Campus<span>Find</span></a>
+        <p>Making campus lost-and-found simpler, together.</p>
+        <p class="copyright">© 2026 CampusFind | Student Project</p>
+    </footer>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:5000";
+
+        const reportsContainer =
+            document.getElementById("reportsContainer");
+
+        const searchInput =
+            document.getElementById("searchInput");
+
+        const searchButton =
+            document.getElementById("searchButton");
+
+        const loginLink =
+            document.getElementById("loginLink");
+
+        const signupLink =
+            document.getElementById("signupLink");
+
+        const userStatus =
+            document.getElementById("userStatus");
+
+        const logoutBtn =
+            document.getElementById("logoutBtn");
+
+        let allReports = [];
+        let currentFilter = "ALL";
+        let matchCache = {};
+
+        // ---------------- DASHBOARD STATISTICS ----------------
+
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/stats`,
+                    { cache: "no-store" }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Could not load statistics");
+                }
+
+                const stats = await response.json();
+
+                document.getElementById("lostCount").textContent =
+                    stats.lost_items ?? 0;
+
+                document.getElementById("foundCount").textContent =
+                    stats.found_items ?? 0;
+
+                document.getElementById("pendingCount").textContent =
+                    stats.pending_claims ?? 0;
+
+                document.getElementById("approvedCount").textContent =
+                    stats.approved_claims ?? 0;
+
+            } catch (error) {
+                console.error("Statistics loading failed:", error);
+            }
+        }
+
+        // ---------------- LOAD REPORTS ----------------
+
+        async function loadReports() {
+            reportsContainer.textContent = "Loading reports...";
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/reports`,
+                    { cache: "no-store" }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Could not load reports");
+                }
+
+                const data = await response.json();
+
+                allReports = Array.isArray(data)
+                    ? data
+                    : (data.reports || []);
+
+                displayReports();
+                loadAllMatches();
+
+            } catch (error) {
+                console.error("Loading reports failed:", error);
+
+                reportsContainer.textContent =
+                    "Could not load reports. Please make sure Flask is running.";
+            }
+        }
+
+        // ---------------- SMART MATCHING ----------------
+
+        async function loadAllMatches() {
+            const results = await Promise.all(
+                allReports.map(async report => {
+                    try {
+                        const response = await fetch(
+                            `${API_BASE}/api/matches/${report.id}`
+                        );
+
+                        if (!response.ok) {
+                            return [report.id, []];
+                        }
+
+                        const data = await response.json();
+
+                        return [
+                            report.id,
+                            data.matches || []
+                        ];
+
+                    } catch (error) {
+                        console.error(
+                            "Could not load matches for report",
+                            report.id,
+                            error
+                        );
+
+                        return [report.id, []];
+                    }
+                })
+            );
+
+            matchCache = Object.fromEntries(results);
+            displayReports();
+        }
+
+        // ---------------- REPORT IMAGES ----------------
+
+        function createReportImage(report) {
+            if (!report.image_url) {
+                return null;
+            }
+
+            const image = document.createElement("img");
+
+            image.className = "report-image";
+            image.alt = `Photo of ${report.title || "reported item"}`;
+            image.loading = "lazy";
+
+            image.onerror = function () {
+                const message = document.createElement("p");
+                message.className = "image-error";
+                message.textContent =
+                    "Photo could not be loaded. Please check the image URL.";
+
+                image.replaceWith(message);
+            };
+
+            image.src = report.image_url;
+
+            return image;
+        }
+
+        // ---------------- CLAIM ITEM ----------------
+
+        function createClaimSection(report) {
+            if (
+                String(report.report_type || "").toUpperCase() !== "FOUND"
+            ) {
+                return null;
+            }
+
+            const claimSection = document.createElement("div");
+            claimSection.className = "claim-section";
+
+            const claimHeading = document.createElement("h4");
+            claimHeading.textContent = "🎒 Is this your item?";
+
+            const claimMessage = document.createElement("textarea");
+            claimMessage.placeholder =
+                "Explain how you can identify this item...";
+            claimMessage.rows = 3;
+            claimMessage.maxLength = 1000;
+            claimMessage.className = "claim-message";
+            claimMessage.setAttribute(
+                "aria-label",
+                "Claim verification message"
+            );
+
+            const claimButton = document.createElement("button");
+            claimButton.type = "button";
+            claimButton.textContent = "Claim Item";
+            claimButton.className = "claim-button";
+
+            claimButton.addEventListener("click", async () => {
+                const message = claimMessage.value.trim();
+
+                if (!message) {
+                    alert(
+                        "Please explain how you can identify this item."
+                    );
+                    claimMessage.focus();
+                    return;
+                }
+
+                claimButton.disabled = true;
+                claimButton.textContent = "Submitting...";
+
+                try {
+                    const response = await fetch(
+                        `${API_BASE}/api/claims`,
+                        {
+                            method: "POST",
+                            credentials: "include",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                report_id: report.id,
+                                claim_message: message
+                            })
+                        }
+                    );
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert(
+                            "Claim submitted successfully! Status: Pending"
+                        );
+
+                        claimMessage.value = "";
+
+                        await loadDashboardStats();
+
+                    } else if (response.status === 401) {
+                        alert(
+                            "Please log in before claiming an item."
+                        );
+
+                        window.location.href = "login.html";
+
+                    } else {
+                        alert(
+                            result.error ||
+                            result.message ||
+                            "Claim could not be submitted. Please try again."
+                        );
+                    }
+
+                } catch (error) {
+                    console.error("Claim submission failed:", error);
+
+                    alert(
+                        "Could not connect to CampusFind server. Check whether Flask is running."
+                    );
+
+                } finally {
+                    claimButton.disabled = false;
+                    claimButton.textContent = "Claim Item";
+                }
+            });
+
+            claimSection.append(
+                claimHeading,
+                claimMessage,
+                claimButton
+            );
+
+            return claimSection;
+        }
+
+        // ---------------- DISPLAY REPORTS ----------------
+
+        function displayReports() {
+            const keyword =
+                searchInput.value.trim().toLowerCase();
+
+            const filteredReports = allReports.filter(report => {
+                const matchesType =
+                    currentFilter === "ALL" ||
+                    String(report.report_type || "").toUpperCase()
+                        === currentFilter;
+
+                const searchableText = [
+                    report.title,
+                    report.category,
+                    report.description,
+                    report.location
+                ].join(" ").toLowerCase();
+
+                return matchesType &&
+                    searchableText.includes(keyword);
+            });
+
+            reportsContainer.replaceChildren();
+
+            if (filteredReports.length === 0) {
+                const message = document.createElement("p");
+
+                message.textContent = allReports.length === 0
+                    ? "No reports have been submitted yet."
+                    : "No matching reports found.";
+
+                reportsContainer.appendChild(message);
+                return;
+            }
+
+            filteredReports.forEach(report => {
+                const card = document.createElement("article");
+                card.className = "report-card";
+
+                const badge = document.createElement("span");
+                badge.className = "report-badge";
+                badge.textContent =
+                    String(report.report_type || "ITEM").toUpperCase();
+
+                const title = document.createElement("h3");
+                title.textContent = report.title || "Untitled item";
+
+                const itemImage = createReportImage(report);
+
+                const category = document.createElement("p");
+                category.textContent =
+                    "Category: " + (report.category || "Not specified");
+
+                const description = document.createElement("p");
+                description.textContent =
+                    report.description || "No description provided.";
+
+                const location = document.createElement("p");
+                location.textContent =
+                    "📍 " + (report.location || "Not specified");
+
+                const date = document.createElement("p");
+                date.textContent =
+                    "Date: " + (report.incident_date || "Not specified");
+
+                card.append(badge, title);
+
+                if (itemImage) {
+                    card.appendChild(itemImage);
+                }
+
+                card.append(
+                    category,
+                    description,
+                    location,
+                    date
+                );
+
+                const claimSection = createClaimSection(report);
+
+                if (claimSection) {
+                    card.appendChild(claimSection);
+                }
+
+                // Possible Matches
+                const matchSection = document.createElement("div");
+                matchSection.className = "smart-matches";
+
+                const matchHeading = document.createElement("h4");
+                matchHeading.textContent = "🔎 Possible Matches";
+
+                matchSection.appendChild(matchHeading);
+
+                if (
+                    !Object.prototype.hasOwnProperty.call(
+                        matchCache,
+                        report.id
+                    )
+                ) {
+                    const loading = document.createElement("p");
+                    loading.textContent =
+                        "Checking for possible matches...";
+
+                    matchSection.appendChild(loading);
+
+                } else {
+                    const matches = matchCache[report.id] || [];
+
+                    if (matches.length === 0) {
+                        const noMatches = document.createElement("p");
+                        noMatches.textContent =
+                            "No possible matches found yet.";
+
+                        matchSection.appendChild(noMatches);
+
+                    } else {
+                        matches.forEach(match => {
+                            const matchCard =
+                                document.createElement("div");
+
+                            matchCard.className = "match-card";
+
+                            const matchTitle =
+                                document.createElement("h5");
+
+                            matchTitle.textContent =
+                                `${match.report_type}: ${match.title}`;
+
+                            const matchCategory =
+                                document.createElement("p");
+
+                            matchCategory.textContent =
+                                "Category: " +
+                                (match.category || "Not specified");
+
+                            const matchDescription =
+                                document.createElement("p");
+
+                            matchDescription.textContent =
+                                match.description ||
+                                "No description provided.";
+
+                            const matchLocation =
+                                document.createElement("p");
+
+                            matchLocation.textContent =
+                                "📍 " +
+                                (match.location || "Not specified");
+
+                            const percentage =
+                                document.createElement("p");
+
+                            percentage.textContent =
+                                "Similarity estimate: " +
+                                (match.match_percentage ?? 0) + "%";
+
+                            matchCard.append(
+                                matchTitle,
+                                matchCategory,
+                                matchDescription,
+                                matchLocation,
+                                percentage
+                            );
+
+                            matchSection.appendChild(matchCard);
+                        });
+
+                        const note = document.createElement("p");
+                        note.className = "match-note";
+                        note.textContent =
+                            "These are suggestions only. Verify item details before claiming.";
+
+                        matchSection.appendChild(note);
+                    }
+                }
+
+                card.appendChild(matchSection);
+                reportsContainer.appendChild(card);
+            });
+        }
+
+        // ---------------- SEARCH ----------------
+
+        searchButton.addEventListener("click", displayReports);
+        searchInput.addEventListener("input", displayReports);
+
+        // ---------------- FILTERS ----------------
+
+        document.querySelectorAll(".filter-button").forEach(button => {
+            button.addEventListener("click", () => {
+                currentFilter = button.dataset.filter;
+
+                document.querySelectorAll(".filter-button").forEach(item => {
+                    item.classList.toggle("active", item === button);
+                });
+
+                displayReports();
+            });
+        });
+
+        // ---------------- LOGIN STATUS ----------------
+
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/me`,
+                    { credentials: "include" }
+                );
+
+                if (response.ok) {
+                    const user = await response.json();
+
+                    loginLink.style.display = "none";
+                    signupLink.style.display = "none";
+
+                    userStatus.textContent =
+                        "Hi, " + (user.name || "User");
+
+                    userStatus.style.display = "inline-block";
+                    logoutBtn.style.display = "inline-block";
+
+                } else {
+                    loginLink.style.display = "inline-block";
+                    signupLink.style.display = "inline-block";
+                    userStatus.style.display = "none";
+                    logoutBtn.style.display = "none";
+                }
+
+            } catch (error) {
+                console.error("Could not check login status:", error);
+            }
+        }
+
+        // ---------------- LOGOUT ----------------
+
+        logoutBtn.addEventListener("click", async () => {
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/logout`,
+                    {
+                        method: "POST",
+                        credentials: "include"
+                    }
+                );
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert("Logout failed. Please try again.");
+                }
+
+            } catch (error) {
+                alert("Could not connect to the server.");
+            }
+        });
+
+        // ---------------- START APPLICATION ----------------
+
+        checkLoginStatus();
+        loadReports();
+        loadDashboardStats();
+    </script>
+
+</body>
+</html>
