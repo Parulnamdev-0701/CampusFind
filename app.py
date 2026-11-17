@@ -124,6 +124,34 @@ def create_table():
 def home():
     return send_from_directory(app.root_path, "index.html")
 
+@app.route("/login.html")
+def login_page():
+    return send_from_directory(app.root_path, "login.html")
+
+
+@app.route("/signup.html")
+def signup_page():
+    return send_from_directory(app.root_path, "signup.html")
+
+
+@app.route("/report.html")
+def report_page():
+    return send_from_directory(app.root_path, "report.html")
+
+
+@app.route("/admin.html")
+def admin_page():
+    return send_from_directory(app.root_path, "admin.html")
+
+
+@app.route("/my-claims.html")
+def my_claims_page():
+    return send_from_directory(app.root_path, "my-claims.html")
+
+
+@app.route("/style.css")
+def stylesheet():
+    return send_from_directory(app.root_path, "style.css")
 @app.route("/api/test")
 def test():
     return jsonify({
