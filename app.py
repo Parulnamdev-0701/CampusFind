@@ -868,8 +868,8 @@ def update_claim_status(claim_id):
     finally:
         connection.close()
 
-# ---------------- RUN APPLICATION ----------------
+
+create_table()
 
 if __name__ == "__main__":
-    create_table()
     app.run(debug=True)
