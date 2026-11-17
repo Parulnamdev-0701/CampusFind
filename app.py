@@ -122,8 +122,7 @@ def create_table():
 
 @app.route("/")
 def home():
-    return "CampusFind backend is running!"
-
+    return send_from_directory(app.root_path, "index.html")
 
 @app.route("/api/test")
 def test():
