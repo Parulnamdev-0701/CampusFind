@@ -178,7 +178,6 @@ def ensure_admin_account():
 def home():
     return send_from_directory(app.root_path, "index.html")
 
-
 @app.route("/login.html")
 def login_page():
     return send_from_directory(app.root_path, "login.html")
