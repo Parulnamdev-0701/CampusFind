@@ -27,7 +27,9 @@ MAX_IMAGE_SIZE = 5 * 1024 * 1024
 app.config["MAX_CONTENT_LENGTH"] = MAX_IMAGE_SIZE
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = False
+app.config["SESSION_COOKIE_SECURE"] = (
+    os.environ.get("COOKIE_SECURE", "false").lower() == "true"
+)
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -92,7 +94,7 @@ def create_table():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         connection.execute("""
             CREATE TABLE IF NOT EXISTS claims (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,8 +114,60 @@ def create_table():
             )
         """)
 
+        connection.commit()
+
+    finally:
+        connection.close()
+
+
+# ---------------- CREATE / UPDATE ADMIN ACCOUNT ----------------
+
+def ensure_admin_account():
+    admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    admin_password = os.environ.get("ADMIN_PASSWORD", "")
+    admin_name = os.environ.get("ADMIN_NAME", "CampusFind Admin").strip()
+
+    if not admin_email or not admin_password:
+        app.logger.warning(
+            "ADMIN_EMAIL or ADMIN_PASSWORD is not configured."
+        )
+        return
+
+    if len(admin_password) < 8:
+        raise ValueError("ADMIN_PASSWORD must be at least 8 characters.")
+
+    connection = get_db_connection()
+
+    try:
+        existing = connection.execute("""
+            SELECT id
+            FROM users
+            WHERE email = ?
+        """, (admin_email,)).fetchone()
+
+        password_hash = generate_password_hash(admin_password)
+
+        if existing:
+            connection.execute("""
+                UPDATE users
+                SET role = 'admin',
+                    password_hash = ?
+                WHERE email = ?
+            """, (password_hash, admin_email))
+
+        else:
+            connection.execute("""
+                INSERT INTO users (name, email, password_hash, role)
+                VALUES (?, ?, ?, 'admin')
+            """, (
+                admin_name or "CampusFind Admin",
+                admin_email,
+                password_hash
+            ))
 
         connection.commit()
+        app.logger.info("CampusFind admin account is ready.")
+
     finally:
         connection.close()
 
@@ -123,6 +177,7 @@ def create_table():
 @app.route("/")
 def home():
     return send_from_directory(app.root_path, "index.html")
+
 
 @app.route("/login.html")
 def login_page():
@@ -152,6 +207,8 @@ def my_claims_page():
 @app.route("/style.css")
 def stylesheet():
     return send_from_directory(app.root_path, "style.css")
+
+
 @app.route("/api/test")
 def test():
     return jsonify({
@@ -202,6 +259,7 @@ def signup():
         """, (name, email, generate_password_hash(password)))
 
         connection.commit()
+
         return jsonify({
             "message": "Account created successfully!",
             "role": "student"
@@ -248,6 +306,7 @@ def login():
             FROM users
             WHERE email = ?
         """, (email,)).fetchone()
+
     finally:
         connection.close()
 
@@ -293,7 +352,10 @@ def current_user():
 @app.route("/api/logout", methods=["POST"])
 def logout():
     session.clear()
-    return jsonify({"message": "Logged out successfully!"}), 200
+
+    return jsonify({
+        "message": "Logged out successfully!"
+    }), 200
 
 
 # ---------------- CREATE REPORT ----------------
@@ -318,6 +380,7 @@ def create_report():
 
     for field in required_fields:
         value = data.get(field)
+
         if not isinstance(value, str) or not value.strip():
             return jsonify({"error": f"{field} is required"}), 400
 
@@ -391,6 +454,7 @@ def create_report():
             os.remove(saved_path)
 
         app.logger.exception("Failed to save report")
+
         return jsonify({
             "error": "Unable to save the report. Please try again."
         }), 500
@@ -439,6 +503,7 @@ def dashboard_stats():
     finally:
         connection.close()
 
+
 # ---------------- GET ALL REPORTS ----------------
 
 @app.route("/api/reports", methods=["GET"])
@@ -459,13 +524,15 @@ def get_reports():
         for row in rows:
             report = dict(row)
             filename = report.pop("image_filename", None)
+
             report["image_url"] = (
-                f"http://127.0.0.1:5000/uploads/{filename}"
-                if filename else None
+                f"/uploads/{filename}" if filename else None
             )
+
             reports.append(report)
 
         return jsonify(reports), 200
+
     finally:
         connection.close()
 
@@ -528,8 +595,12 @@ def text_similarity(text1, text2):
 
     words1 = set(expanded1.split())
     words2 = set(expanded2.split())
+
     union = words1 | words2
-    word_score = len(words1 & words2) / len(union) if union else 0.0
+
+    word_score = (
+        len(words1 & words2) / len(union) if union else 0.0
+    )
 
     return max(original_score, synonym_score, word_score)
 
@@ -559,6 +630,7 @@ def find_matches(report_id):
             return jsonify({"error": "Invalid report type"}), 400
 
         opposite_type = "FOUND" if current_type == "LOST" else "LOST"
+
         ignored_words = {
             "is", "are", "was", "were", "the", "a", "an",
             "my", "found", "lost", "missing", "near",
@@ -588,9 +660,11 @@ def find_matches(report_id):
             title_score = text_similarity(
                 current["title"], candidate["title"]
             )
+
             description_score = text_similarity(
                 current["description"], candidate["description"]
             )
+
             location_score = text_similarity(
                 current["location"], candidate["location"]
             )
@@ -625,14 +699,12 @@ def find_matches(report_id):
 
     finally:
         connection.close()
-    
 
 
 # ---------------- CLAIM ITEM ----------------
 
 @app.route("/api/claims", methods=["POST"])
 def create_claim():
-    # Only logged-in users can submit claims
     if "user_id" not in session:
         return jsonify({"error": "Please log in first"}), 401
 
@@ -664,7 +736,6 @@ def create_claim():
     connection = get_db_connection()
 
     try:
-        # Check that the reported item exists
         report = connection.execute("""
             SELECT id, title
             FROM reports
@@ -674,7 +745,6 @@ def create_claim():
         if report is None:
             return jsonify({"error": "Item report not found"}), 404
 
-        # Avoid duplicate pending claims from the same user
         existing_claim = connection.execute("""
             SELECT id
             FROM claims
@@ -797,6 +867,7 @@ def get_all_claims():
     finally:
         connection.close()
 
+
 # ---------------- ADMIN REVIEW CLAIM ----------------
 
 @app.route("/api/claims/<int:claim_id>/status", methods=["PATCH"])
@@ -804,7 +875,6 @@ def update_claim_status(claim_id):
     if "user_id" not in session:
         return jsonify({"error": "Please log in first"}), 401
 
-    # Only an account with the admin role can review claims
     if session.get("role") != "admin":
         return jsonify({
             "error": "Only an admin can review claims"
@@ -869,7 +939,13 @@ def update_claim_status(claim_id):
         connection.close()
 
 
+# ---------------- DATABASE INITIALIZATION ----------------
+
 create_table()
+ensure_admin_account()
+
+
+# ---------------- RUN APPLICATION ----------------
 
 if __name__ == "__main__":
     app.run(debug=True)
